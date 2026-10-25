@@ -1,0 +1,52 @@
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    init: true
+    # A API é exposta apenas na rede interna; o nginx do frontend faz o proxy
+    # de /api e /uploads no mesmo domínio (evita CORS e porta extra).
+    expose: ["4000"]
+    env_file: ./backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      FRONTEND_URL: ${PUBLIC_URL:-http://localhost}
+    volumes:
+      - uploads_data:/app/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 25s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend/cobrar
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-}
+        REACT_APP_GOOGLE_CLIENT_ID: ${REACT_APP_GOOGLE_CLIENT_ID:-}
+        REACT_APP_MERCADOPAGO_PUBLIC_KEY: ${REACT_APP_MERCADOPAGO_PUBLIC_KEY:-}
+    restart: unless-stopped
+    ports: ["80:80"]
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # Banco local opcional. Para usar: docker compose --profile local-db up
+  # e ajuste MONGO_URI no backend/.env para mongodb://mongo:27017/portal-contadores
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    profiles: ["local-db"]
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mongo_data:
+  uploads_data:
