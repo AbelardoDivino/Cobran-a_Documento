@@ -1,7 +1,7 @@
 const { normalize } = require('./import.parser');
 
 const RULES = [
-  ['Impostos', /das|simples nacional|imposto|tributo|guia de recolhimento|inss|fgts|irpf|iss/],
+  ['Impostos', /\bdas\b|simples nacional|imposto|tributo|guia de recolhimento|inss|fgts|irpf|\biss\b/],
   ['Moradia', /aluguel|condominio|energia|luz|agua|gas|internet|telefone|iptu/],
   ['Alimentação', /mercado|supermerc|padaria|restaurante|ifood|lanchonete|acougue|hortifruti|cafe|pizza|delivery/],
   ['Transporte', /uber|99app|combustivel|posto|gasolina|etanol|taxi|estacionamento|pedagio|metro|onibus/],

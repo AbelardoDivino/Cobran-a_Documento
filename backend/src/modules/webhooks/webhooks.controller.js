@@ -113,15 +113,23 @@ async function revokeSubscription(sub) {
 
 async function applyChargeStatus(charge, status) {
   const wasApproved = charge.status === 'approved' || Boolean(charge.paidAt);
-  if (isApproved(status)) {
-    charge.status = 'approved';
-    charge.paidAt = charge.paidAt || new Date();
+  // Atualização atômica: só marca approved se ainda não estava approved.
+  // Evita race condition em webhook reentregue.
+  if (isApproved(status) && !wasApproved) {
+    const updated = await Charge.findOneAndUpdate(
+      { _id: charge._id, status: { $ne: 'approved' } },
+      { $set: { status: 'approved', paidAt: new Date() } },
+      { new: true }
+    );
+    if (!updated) return charge; // já estava approved, ignora
+    charge = updated;
   } else if (isRejected(status)) {
     charge.status = 'rejected';
+    await charge.save();
   } else {
     charge.status = 'pending';
+    await charge.save();
   }
-  await charge.save();
 
   const sub = await Subscription.findById(charge.subscriptionId);
   if (!sub) return charge;

@@ -3,6 +3,15 @@ const DocumentItem = require('../../models/DocumentItem');
 const { sendMail } = require('../../lib/mailer');
 const env = require('../../config/env');
 
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function reminderWindow(now = new Date()) {
   const limit = new Date(now);
   limit.setDate(limit.getDate() + env.REMINDER_DAYS_BEFORE);
@@ -39,7 +48,7 @@ async function runReminders(now = new Date()) {
         to,
         subject: `Lembrete: ${pendingCount} documento(s) pendente(s) — ${request.competencia}`,
         text: `Olá ${request.clientId.name}, faltam ${pendingCount} documento(s) com vencimento em ${request.dueDate.toISOString().slice(0, 10)}.\n\nEnvie aqui: ${link}`,
-        html: `<p>Olá ${request.clientId.name}, faltam <strong>${pendingCount} documento(s)</strong> com vencimento em ${request.dueDate.toISOString().slice(0, 10)}.</p><p><a href="${link}">Enviar documentos</a></p>`,
+        html: `<p>Olá ${escapeHtml(request.clientId.name)}, faltam <strong>${pendingCount} documento(s)</strong> com vencimento em ${request.dueDate.toISOString().slice(0, 10)}.</p><p><a href="${escapeHtml(link)}">Enviar documentos</a></p>`,
       });
       sent += 1;
     } catch (e) {
