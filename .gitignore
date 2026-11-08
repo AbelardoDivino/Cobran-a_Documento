@@ -12,8 +12,7 @@ dist/
 coverage/
 
 # Uploads e dados locais
-backend/uploads/
-uploads/
+/backend/uploads/
 
 # Logs
 *.log
