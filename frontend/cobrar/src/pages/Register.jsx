@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,6 +27,7 @@ export default function Register() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const { register, handleSubmit, watch, setValue, formState } = useForm({
     resolver: zodResolver(schema),
     defaultValues: { accountType: 'personal' },
@@ -103,7 +105,12 @@ export default function Register() {
         </label>
         <label className="field">
           Senha
-          <input type="password" placeholder="Mínimo 8 caracteres" {...register('password')} />
+          <div style={{ position: 'relative' }}>
+            <input type={showPassword ? 'text' : 'password'} placeholder="Mínimo 8 caracteres" {...register('password')} style={{ paddingRight: 40 }} />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}>
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
           {formState.errors.password && (
             <span className="error">{formState.errors.password.message}</span>
           )}

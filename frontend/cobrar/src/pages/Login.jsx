@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,6 +19,7 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const verified = searchParams.get('verified');
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [pendingGoogle, setPendingGoogle] = useState(null);
   const [tipo, setTipo] = useState('personal');
   const [officeName, setOfficeName] = useState('');
@@ -99,7 +101,12 @@ export default function Login() {
         </label>
         <label className="field">
           Senha
-          <input type="password" placeholder="Sua senha" {...register('password')} data-testid="password" />
+          <div style={{ position: 'relative' }}>
+            <input type={showPassword ? 'text' : 'password'} placeholder="Sua senha" {...register('password')} data-testid="password" style={{ paddingRight: 40 }} />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}>
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
         </label>
         {error && <p className="error" data-testid="login-error">{error}</p>}
         <button className="btn primary" type="submit" data-testid="submit">

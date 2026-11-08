@@ -28,9 +28,15 @@ export default function FinancesAccounts() {
     e.preventDefault();
     setError('');
     try {
+      const raw = String(form.initialBalance || '').trim();
+      // Aceita "1000", "1000.50", "1.000,50" e "1000,50".
+      const normalized = raw.includes(',')
+        ? raw.replace(/\./g, '').replace(',', '.')
+        : raw.replace(/,/g, '');
+      const parsed = Number(normalized);
       await createAccount.mutateAsync({
         ...form,
-        initialBalance: Number(String(form.initialBalance).replace(',', '.')) || 0,
+        initialBalance: Number.isFinite(parsed) ? parsed : 0,
       });
       setForm(EMPTY);
     } catch (err) {
