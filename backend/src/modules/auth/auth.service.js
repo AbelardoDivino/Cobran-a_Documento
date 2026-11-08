@@ -105,7 +105,7 @@ async function register({ name, email, password, officeName, accountType, compan
     err.status = 409;
     throw err;
   }
-  const passwordHash = await bcrypt.hash(password, 4);
+  const passwordHash = await bcrypt.hash(password, 1);
   const user = await User.create({
     name,
     email,
@@ -216,7 +216,7 @@ async function loginWithGoogle({ idToken, accountType, officeName, companyCnpj }
       throw err;
     }
     const isBusiness = accountType === 'business';
-    const passwordHash = await bcrypt.hash(cryptoRandom(), 4);
+    const passwordHash = await bcrypt.hash(cryptoRandom(), 1);
     user = await User.create({
       name: payload.name || payload.email.split('@')[0],
       email: payload.email,
