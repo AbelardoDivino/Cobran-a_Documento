@@ -101,7 +101,7 @@ async function listTransactions(userId, query) {
 async function createTransaction(userId, data) {
   const workspaceId = await getWorkspaceId(userId);
   const account = await repo.getAccount(workspaceId, data.accountId);
-  const amount = Math.abs(Number(data.amount));
+  const amount = Math.abs(Number(String(data.amount ?? 0).replace(',', '.')) || 0);
   if (!data.date || Number.isNaN(amount) || amount === 0) {
     const err = new Error('Informe data, descrição e valor');
     err.status = 400;

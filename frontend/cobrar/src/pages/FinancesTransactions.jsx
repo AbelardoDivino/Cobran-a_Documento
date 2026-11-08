@@ -34,7 +34,14 @@ export default function FinancesTransactions() {
         accountId: form.accountId || accounts?.[0]?._id,
         date: form.date || new Date().toISOString(),
         description: form.description,
-        amount: Number(String(form.amount).replace(',', '.')),
+        amount: (() => {
+          const raw = String(form.amount || '').trim();
+          const normalized = raw.includes(',')
+            ? raw.replace(/\./g, '').replace(',', '.')
+            : raw.replace(/,/g, '');
+          const parsed = Number(normalized);
+          return Number.isFinite(parsed) ? parsed : 0;
+        })(),
         type: form.type,
         category: form.category || undefined,
       });
