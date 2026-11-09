@@ -1,164 +1,140 @@
-# Cobran-a_Documento
+# Portal do Contador
 
-## Login com Google
+Sistema SaaS para escritórios contábeis: cobrança de documentos dos clientes + controle financeiro do escritório.
 
-O botão "Fazer login com o Google" usa Google Identity Services e só aparece quando
-o Client ID está configurado.
+## Stack
 
-### Variáveis
+| Camada | Tecnologia |
+|---|---|
+| Backend | Node.js 22 + Express |
+| Banco | MongoDB Atlas + Mongoose |
+| Auth | JWT (contador) + token público por pedido (cliente, sem login) |
+| Frontend | React 18 (CRA) + React Router + TanStack Query |
+| Pagamentos | Mercado Pago (Orders API — Pix, cartão, boleto) |
+| Upload | Multer (disco local / volume Docker) |
+| Lembretes | node-cron + Nodemailer |
+| Testes | Jest + Supertest + mongodb-memory-server (backend) / Jest + RTL (frontend) |
 
-- `backend/.env`: `GOOGLE_CLIENT_ID=...`
-- `frontend/cobrar/.env.local`: `REACT_APP_GOOGLE_CLIENT_ID=...`
-- Docker: `REACT_APP_GOOGLE_CLIENT_ID` é passado como build arg pelo `docker-compose.yml`.
+## Estrutura
 
-Reinicie o `npm start` do frontend depois de alterar `.env.local` (o CRA lê as
-variáveis apenas no boot).
+```
+├── backend/          # API Express
+│   ├── src/
+│   │   ├── modules/  # auth, billing, clients, finance, reminders, requests, uploads, webhooks, workspace
+│   │   ├── models/   # Mongoose schemas
+│   │   ├── middlewares/
+│   │   ├── lib/      # mongoose, mercadopago, mailer
+│   │   └── config/   # env.js
+│   ├── tests/        # 10 suites, 30 testes
+│   └── Dockerfile
+├── frontend/cobrar/  # React (CRA)
+│   ├── src/
+│   │   ├── pages/    # Login, Register, Dashboard, ClientDetail, NewRequest, PublicUpload, Billing, Finances*
+│   │   ├── components/
+│   │   ├── hooks/    # useAuth, useClients, useRequest, useFinance, useBilling
+│   │   └── services/ # api.js (axios)
+│   └── Dockerfile
+├── docker-compose.yml
+└── .env.example
+```
 
-### Google Cloud Console
+## Funcionalidades
 
-Em **APIs & Services > Credentials > OAuth 2.0 Client ID (Web)**:
+- **Cobrança de documentos:** contador cria pedido com checklist por cliente, gera link público (sem login) para o cliente enviar documentos. Aprovação/rejeição pelo contador. Lembretes automáticos por e-mail.
+- **Controle financeiro:** contas, lançamentos, categorização automática, importação de extrato (CSV/OFX), saldo real por conta, resumo mensal.
+- **Assinatura (SaaS):** contador paga R$ 49-90/mês via Pix, cartão ou boleto (Mercado Pago Orders API). Renovação automática de cobrança.
+- **Login com Google:** OAuth 2.0 via Google Identity Services.
+- **Equipe:** convite de membros para o mesmo workspace.
+- **LGPD:** exclusão em cascata (cliente + pedidos + itens + arquivos), token público aleatório (UUID v4), link de upload sem leitura de outros documentos.
 
-- **Authorized JavaScript origins**: `http://localhost:3000` e o domínio de produção
-  (ex.: `https://app.seudominio.com`). Não é necessário redirect URI para este botão.
-- **OAuth consent screen**: defina o nome do app como `Portal do Contador`; se o
-  status for "Testing", adicione os e-mails em **Test users**.
+## Variáveis de ambiente
 
-O backend valida o ID token em `POST /api/auth/google` com `google-auth-library` e
-cria o usuário (tipo pessoal) no primeiro acesso.
+### Backend (`backend/.env`)
 
-> Use sempre `http://localhost:3000`. O CRA está fixado em `PORT=3000`; se outra porta
-> (ex.: 3001) for usada, o Google recusa com "The given origin is not allowed".
+| Variável | Descrição |
+|---|---|
+| `PORT` | Porta do servidor (ex.: 4000) |
+| `MONGO_URI` | String de conexão MongoDB Atlas |
+| `JWT_SECRET` | Segredo JWT (32+ caracteres) |
+| `JWT_EXPIRES_IN` | Validade do token (ex.: 15m) |
+| `GOOGLE_CLIENT_ID` | Client ID do Google OAuth |
+| `MP_ACCESS_TOKEN` | Access Token do Mercado Pago |
+| `MP_WEBHOOK_SECRET` | Segredo do webhook MP |
+| `FRONTEND_URL` | URL do frontend (CORS) |
+| `SMTP_HOST` | Host SMTP (ex.: smtp.gmail.com) |
+| `SMTP_PORT` | Porta SMTP (ex.: 587) |
+| `SMTP_USER` | Usuário SMTP |
+| `SMTP_PASS` | Senha de app SMTP |
+| `UPLOADS_DIR` | Diretório de uploads (ex.: ./uploads) |
+| `TRUST_PROXY` | 1 (atrás de proxy) |
+| `REMINDER_DAYS_BEFORE` | Dias antes do vencimento para lembrete (padrão: 3) |
+| `RENEWAL_DAYS_BEFORE` | Dias antes do vencimento para renovação (padrão: 3) |
 
-## Pagamentos (Mercado Pago)
+### Frontend (`frontend/cobrar/.env.local`)
 
-O checkout transparente usa a **Orders API** (`/v1/orders`) com Pix, cartão e boleto.
+| Variável | Descrição |
+|---|---|
+| `REACT_APP_API_URL` | URL da API (ex.: https://backend.onrender.com) |
+| `REACT_APP_MERCADOPAGO_PUBLIC_KEY` | Public Key do Mercado Pago |
+| `REACT_APP_GOOGLE_CLIENT_ID` | Client ID do Google OAuth |
 
-### Variáveis
+## Como rodar localmente
 
-- `backend/.env`:
-  - `MP_ACCESS_TOKEN`: Access Token **de teste** em desenvolvimento e **de produção** em produção.
-  - `MP_WEBHOOK_SECRET`: segredo do webhook configurado no painel do Mercado Pago.
-- `frontend/cobrar/.env.local`:
-  - `REACT_APP_MERCADOPAGO_PUBLIC_KEY`: Public Key do **mesmo ambiente** do Access Token.
+### Backend
+```bash
+cd backend
+cp .env.example .env  # edite com suas credenciais
+npm install
+npm run dev           # nodemon, porta 4000
+npm test              # 10 suites, 30 testes
+```
 
-Use sempre o par de credenciais do mesmo ambiente (teste com teste, produção com produção).
-Trocar as chaves exige reiniciar backend e frontend.
+### Frontend
+```bash
+cd frontend/cobrar
+cp .env.example .env.local  # edite com suas credenciais
+npm install
+npm start               # porta 3000
+npm test                # 6 suites, 9 testes
+npm run build           # build de produção
+```
 
-### Cartões de teste (Brasil)
-
-| Bandeira | Número | CVV | Validade |
-| --- | --- | --- | --- |
-| Mastercard | 5480 8328 0103 3311 | 123 | 11/30 |
-| Visa | 4235 6477 2802 5682 | 123 | 11/30 |
-| Amex | 3753 651535 56885 | 1234 | 11/30 |
-
-O resultado depende do nome do titular: `APRO` aprova, `OTHE` recusa, `CONT` deixa pendente
-(use o CPF `12345678909`). O cartão `5031 4332 1540 6351` não é aceito pela Orders API.
-
-### Webhook
-
-Configure no painel do Mercado Pago a URL `https://seu-dominio/api/webhooks/mercadopago`
-para o tópico **order**. A assinatura `x-signature` é validada com `MP_WEBHOOK_SECRET`.
-
-> Pix e boleto só liberam o Pro quando o pagamento é confirmado pelo webhook. O cartão
-> é aprovado na hora e libera o Pro na própria resposta.
+### Docker (tudo junto)
+```bash
+cp .env.example .env  # raiz do projeto
+docker compose --env-file .env up -d --build
+curl http://localhost:4000/health  # deve retornar {"ok":true}
+```
 
 ## Deploy (Render + Vercel)
 
-Neste formato o frontend fica na Vercel e a API no Render, em domínios diferentes
-(os subdomínios gratuitos `*.vercel.app` e `*.onrender.com` já têm HTTPS). O
-`frontend/cobrar/vercel.json` cuida das rotas do React Router e dos headers/CSP.
-
-### Backend no Render
-
+### Backend (Render)
 - Root Directory: `backend`
-- Build Command: `npm ci --omit=dev`
-- Start Command: `npm start`
+- Dockerfile Path: `./Dockerfile`
 - Health Check Path: `/health`
-- Disco persistente: monte em `/var/data` e defina `UPLOADS_DIR=/var/data/uploads`.
-  Sem disco (plano free), os arquivos enviados somem a cada deploy/restart.
-- Use instância sempre ligada: os jobs de lembrete/renovação usam `node-cron` dentro
-  do processo. No plano free o serviço dorme e os jobs não rodam.
-- Variáveis: `NODE_ENV=production`, `MONGO_URI`, `JWT_SECRET`, `JWT_EXPIRES_IN`,
-  `GOOGLE_CLIENT_ID`, `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`,
-  `FRONTEND_URL=https://SEU-PROJETO.vercel.app`, `SMTP_HOST`, `SMTP_PORT`,
-  `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `UPLOADS_DIR=/var/data/uploads`,
-  `TRUST_PROXY=1`, `REMINDER_DAYS_BEFORE=3`, `RENEWAL_DAYS_BEFORE=3`.
-  `BACKEND_URL` é opcional: o Render define `RENDER_EXTERNAL_URL` automaticamente.
-  `CORS_ORIGINS` aceita URLs extras separadas por vírgula (ex.: previews da Vercel).
+- Adicione todas as env vars listadas acima
+- `NODE_ENV=production`
 
-### Frontend na Vercel
-
+### Frontend (Vercel)
 - Root Directory: `frontend/cobrar`
-- Framework: Create React App (build `npm run build`, saída `build`)
-- Variáveis (Production e Preview):
-  `REACT_APP_API_URL=https://SEU-BACKEND.onrender.com` (sem barra no final),
-  `REACT_APP_GOOGLE_CLIENT_ID`, `REACT_APP_MERCADOPAGO_PUBLIC_KEY`.
-- O CRA grava as variáveis no build: alterou alguma, faça **Redeploy**.
-- Não use `PUBLIC_URL`/nginx neste formato; eles são só do deploy Docker.
+- Framework: Create React App
+- Env vars: `REACT_APP_API_URL`, `REACT_APP_MERCADOPAGO_PUBLIC_KEY`, `REACT_APP_GOOGLE_CLIENT_ID`
 
-### Ajustes externos
+### Pós-deploy
+- Atlas: liberar IP `0.0.0.0/0` (ou IP do Render)
+- Mercado Pago: webhook URL `https://SEU-BACKEND/api/webhooks/mercadopago` (tópico: order)
+- Google Console: adicionar domínio de produção em Authorized JavaScript origins
 
-- Google Console: adicione `https://SEU-PROJETO.vercel.app` em **Authorized JavaScript
-  origins**.
-- Mercado Pago: cadastre `https://SEU-BACKEND.onrender.com/api/webhooks/mercadopago`
-  (tópico **order**) e confirme que a Public Key do frontend é do mesmo aplicativo do
-  `MP_ACCESS_TOKEN`.
-- Atlas: libere o IP de saída do Render (ou `0.0.0.0/0`, com senha forte) e faça backup.
-- `SMTP_HOST` continua obrigatório: sem ele o backend recusa iniciar em produção.
-  Use Gmail (senha de app) ou Brevo/Resend para obter host, porta, usuário e senha.
+## Testes
 
-## Deploy (Docker)
+```bash
+# Backend (10 suites, 30 testes)
+cd backend && npm test
 
-O frontend e a API ficam no **mesmo domínio**: o nginx serve o build do CRA e faz
-proxy de `/api/` e `/uploads/` para o container do backend (porta 4000 interna).
-Assim não há CORS nem necessidade de expor a porta 4000.
+# Frontend (6 suites, 9 testes)
+cd frontend/cobrar && npm test
+```
 
-1. Copie `.env.example` para `.env` (raiz) e preencha:
-   - `PUBLIC_URL`: URL pública do site (ex.: `https://app.seudominio.com`);
-   - `REACT_APP_GOOGLE_CLIENT_ID`;
-   - `REACT_APP_MERCADOPAGO_PUBLIC_KEY` (Public Key de **produção**);
-   - deixe `REACT_APP_API_URL` **vazio** (usa caminhos relativos via proxy).
-2. Em `backend/.env`, use as credenciais de **produção** do Mercado Pago:
-   `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` e `MONGO_URI`, além de `JWT_SECRET`
-   (mínimo 32 caracteres aleatórios) e `SMTP_HOST` (sem ele o backend não inicia).
-   O `FRONTEND_URL` usado em produção vem do `PUBLIC_URL` definido no compose.
-3. Suba os containers:
+## Licença
 
-   ```bash
-   docker compose --env-file .env up -d --build
-   ```
-
-4. No painel do Mercado Pago, cadastre o webhook `https://SEU_DOMINIO/api/webhooks/mercadopago`
-   (tópico **order**) e copie o segredo para `MP_WEBHOOK_SECRET`.
-5. Termine o TLS no servidor/proxy à frente do container (porta 80), ex.: Caddy,
-   Traefik, Cloudflare ou nginx com Certbot.
-
-Observações:
-
-- `NODE_ENV=production` exige `MP_ACCESS_TOKEN`, `SMTP_HOST`, `JWT_SECRET` com 32+
-  caracteres, `MP_WEBHOOK_SECRET` e `FRONTEND_URL` https público; sem isso o backend
-  não inicia (evita modo mock e webhooks forjados).
-- A renovação gera automaticamente uma nova cobrança Pix/boleto até 3 dias antes do
-  vencimento e envia o link/código por e-mail. No cartão, o Mercado Pago não é usado como
-  recorrência: o contador recebe um aviso por e-mail para pagar novamente (o cartão não é
-  armazenado). O período só é estendido após a confirmação do pagamento. A antecedência
-  pode ser ajustada em `RENEWAL_DAYS_BEFORE` (padrão: 3).
-- O cadastro envia um link de confirmação de e-mail (validade de 24h). Enquanto não
-  confirmar, o login por senha continua funcionando, mas convites de equipe não são
-  aceitos e o login Google exige `email_verified`. O reenvio fica em
-  `POST /api/auth/resend-verification`.
-- `/register`, `/refresh`, `/login` e o upload público têm limite de tentativas por IP
-  (ignorado em `NODE_ENV=test`). A senha mínima é 8 caracteres.
-- Reenviar um documento apaga o arquivo anterior; excluir um cliente apaga pedidos,
-  itens e os arquivos enviados (LGPD). As páginas `/privacidade` e `/termos` são
-  servidas pelo frontend, e o nginx aplica CSP para Mercado Pago e Google.
-- Arquivos enviados pelos clientes ficam em `uploads_data` e **não** são públicos:
-  o download passa por `GET /uploads/:arquivo?token=<accessToken>` e só o contador
-  dono do pedido tem acesso.
-- O plano Pro expira em `currentPeriodEnd` (30/90/365 dias conforme o plano) e o
-  workspace volta para o Begin no próximo acesso sem assinatura ativa.
-- Em desenvolvimento (`npm start`), o CRA usa o campo `proxy` do `package.json` para
-  encaminhar `/api` e `/uploads` ao backend em `http://localhost:4000`.
-
-
+MIT
