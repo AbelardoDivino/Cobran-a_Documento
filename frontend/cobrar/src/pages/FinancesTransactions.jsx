@@ -12,6 +12,8 @@ export default function FinancesTransactions() {
   const [page, setPage] = useState(1);
   const [form, setForm] = useState(EMPTY);
   const [showForm, setShowForm] = useState(true);
+  const [showExport, setShowExport] = useState(false);
+  const [exportAccount, setExportAccount] = useState('');
   const [error, setError] = useState('');
 
   const { data: accounts } = useAccounts();
@@ -70,30 +72,62 @@ export default function FinancesTransactions() {
           <button
             className="btn"
             type="button"
-            onClick={async () => {
-              try {
-                const token = localStorage.getItem('accessToken');
-                const params = new URLSearchParams();
-                if (filters.from) params.set('from', filters.from);
-                if (filters.to) params.set('to', filters.to);
-                if (filters.accountId) params.set('accountId', filters.accountId);
-                const url = `${process.env.REACT_APP_API_URL || ''}/api/finance/export?${params.toString()}`;
-                const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-                if (!res.ok) throw new Error('Falha ao exportar');
-                const blob = await res.blob();
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = 'financeiro.xlsx';
-                a.click();
-                URL.revokeObjectURL(a.href);
-                toast.success('Excel exportado!');
-              } catch (err) {
-                toast.error('Não foi possível exportar.');
-              }
-            }}
+            onClick={() => setShowExport(true)}
           >
             <Download size={16} /> Exportar Excel
           </button>
+          {showExport && (
+            <div className="modal-backdrop" onClick={() => setShowExport(false)}>
+              <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <h3>Exportar relatório Excel</h3>
+                <p className="muted">Selecione a conta para exportar todos os lançamentos.</p>
+                <label className="field">
+                  Conta
+                  <select value={exportAccount} onChange={(e) => setExportAccount(e.target.value)}>
+                    <option value="">Todas as contas</option>
+                    {(accounts || []).map((a) => (
+                      <option key={a._id} value={a._id}>
+                        {a.name} ({brl(a.balance ?? a.initialBalance)})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="row" style={{ marginTop: 14 }}>
+                  <button
+                    className="btn primary"
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const token = localStorage.getItem('accessToken');
+                        const params = new URLSearchParams();
+                        if (exportAccount) params.set('accountId', exportAccount);
+                        if (filters.from) params.set('from', filters.from);
+                        if (filters.to) params.set('to', filters.to);
+                        const url = `${process.env.REACT_APP_API_URL || ''}/api/finance/export?${params.toString()}`;
+                        const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+                        if (!res.ok) throw new Error('Falha ao exportar');
+                        const blob = await res.blob();
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = `financeiro-${exportAccount ? (accounts || []).find((x) => x._id === exportAccount)?.name || 'conta' : 'todas'}.xlsx`;
+                        a.click();
+                        URL.revokeObjectURL(a.href);
+                        toast.success('Excel exportado!');
+                        setShowExport(false);
+                      } catch (err) {
+                        toast.error('Não foi possível exportar.');
+                      }
+                    }}
+                  >
+                    <Download size={16} /> Exportar
+                  </button>
+                  <button className="btn" type="button" onClick={() => setShowExport(false)}>
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {showForm && (

@@ -407,6 +407,15 @@ code {
   .mobilebar a.active { background: var(--pine-800); color: #fff; }
 }
 @media (min-width: 761px) { .mobilebar { display: none; } }
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center; z-index: 100;
+}
+.modal {
+  background: var(--card); border-radius: var(--radius); padding: 24px;
+  width: 90%; max-width: 420px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.modal h3 { margin-top: 0; }
 @media (min-width: 768px) { .public { padding: 26px 16px 80px; } }
 
 /* ---- Finan�as ---- */
