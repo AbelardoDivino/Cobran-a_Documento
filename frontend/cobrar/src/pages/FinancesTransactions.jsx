@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Trash2, Plus, Filter } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
 import { useTransactions, useAccounts, useCreateTransaction, useDeleteTransaction } from '../hooks/useFinance';
 import { brl, dayLabel } from '../utils/format';
@@ -47,8 +48,10 @@ export default function FinancesTransactions() {
       });
       setForm(EMPTY);
       setShowForm(false);
+      toast.success('Lançamento salvo!');
     } catch (err) {
       setError(err?.response?.data?.error || 'Não foi possível salvar o lançamento.');
+      toast.error(err?.response?.data?.error || 'Não foi possível salvar o lançamento.');
     }
   };
 
@@ -181,7 +184,15 @@ export default function FinancesTransactions() {
                     <button
                       className="btn ghost danger"
                       title="Excluir"
-                      onClick={() => remove.mutate(t._id)}
+                      onClick={async () => {
+                        if (!window.confirm('Excluir este lançamento?')) return;
+                        try {
+                          await remove.mutateAsync(t._id);
+                          toast.success('Lançamento excluído.');
+                        } catch (err) {
+                          toast.error(err?.response?.data?.error || 'Não foi possível excluir.');
+                        }
+                      }}
                     >
                       <Trash2 size={15} />
                     </button>

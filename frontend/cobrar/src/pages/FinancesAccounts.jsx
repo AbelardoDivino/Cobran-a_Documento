@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Archive, Building2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
 import { useAccounts, useCreateAccount, useArchiveAccount } from '../hooks/useFinance';
 import { brl } from '../utils/format';
@@ -47,8 +48,10 @@ export default function FinancesAccounts() {
         initialBalance: Number.isFinite(parsed) ? parsed : 0,
       });
       setForm(EMPTY);
+      toast.success('Conta criada!');
     } catch (err) {
       setError(err?.response?.data?.error || 'Não foi possível criar a conta.');
+      toast.error(err?.response?.data?.error || 'Não foi possível criar a conta.');
     }
   };
 
@@ -135,8 +138,10 @@ export default function FinancesAccounts() {
                         if (!window.confirm('Arquivar esta conta?')) return;
                         try {
                           await archive.mutateAsync(a._id);
+                          toast.success('Conta arquivada.');
                         } catch (err) {
                           setError(err?.response?.data?.error || 'Não foi possível arquivar.');
+                          toast.error(err?.response?.data?.error || 'Não foi possível arquivar.');
                         }
                       }}
                     >
