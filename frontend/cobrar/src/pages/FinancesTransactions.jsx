@@ -11,7 +11,7 @@ export default function FinancesTransactions() {
   const [filters, setFilters] = useState({ accountId: '', type: '', q: '', from: '', to: '' });
   const [page, setPage] = useState(1);
   const [form, setForm] = useState(EMPTY);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(true);
   const [error, setError] = useState('');
 
   const { data: accounts } = useAccounts();
