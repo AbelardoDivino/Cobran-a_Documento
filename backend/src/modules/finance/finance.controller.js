@@ -76,6 +76,17 @@ async function categories(req, res) {
   return res.json(service.categories());
 }
 
+async function exportXlsx(req, res, next) {
+  try {
+    const { buffer, filename } = await service.exportXlsx(req.user.id, req.query);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.send(buffer);
+  } catch (e) {
+    return next(e);
+  }
+}
+
 module.exports = {
   overview,
   listAccounts,
@@ -87,4 +98,5 @@ module.exports = {
   deleteTransaction,
   importStatement,
   categories,
+  exportXlsx,
 };

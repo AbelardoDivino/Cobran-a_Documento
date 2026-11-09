@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Plus, Filter } from 'lucide-react';
+import { Trash2, Plus, Filter, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Sidebar from '../components/Sidebar';
 import { useTransactions, useAccounts, useCreateTransaction, useDeleteTransaction } from '../hooks/useFinance';
@@ -66,6 +66,33 @@ export default function FinancesTransactions() {
           </div>
           <button className="btn primary" onClick={() => setShowForm((v) => !v)}>
             <Plus size={16} /> Novo lançamento
+          </button>
+          <button
+            className="btn"
+            type="button"
+            onClick={async () => {
+              try {
+                const token = localStorage.getItem('accessToken');
+                const params = new URLSearchParams();
+                if (filters.from) params.set('from', filters.from);
+                if (filters.to) params.set('to', filters.to);
+                if (filters.accountId) params.set('accountId', filters.accountId);
+                const url = `${process.env.REACT_APP_API_URL || ''}/api/finance/export?${params.toString()}`;
+                const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+                if (!res.ok) throw new Error('Falha ao exportar');
+                const blob = await res.blob();
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'financeiro.xlsx';
+                a.click();
+                URL.revokeObjectURL(a.href);
+                toast.success('Excel exportado!');
+              } catch (err) {
+                toast.error('Não foi possível exportar.');
+              }
+            }}
+          >
+            <Download size={16} /> Exportar Excel
           </button>
         </div>
 

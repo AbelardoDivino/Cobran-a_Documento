@@ -137,6 +137,97 @@ async function deleteTransaction(userId, id) {
   return repo.deleteTransaction(workspaceId, id);
 }
 
+async function exportXlsx(userId, query) {
+  const workspaceId = await getWorkspaceId(userId);
+  const period = resolvePeriod(query);
+  const accounts = await repo.listAccounts(workspaceId);
+  const txs = await repo.listTransactions(workspaceId, {
+    from: period.from,
+    to: period.to,
+    accountId: query.accountId,
+    type: query.type,
+    limit: 100000,
+  });
+
+  const ExcelJS = require('exceljs');
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Portal do Contador';
+  wb.created = new Date();
+
+  // Aba 1: Lançamentos
+  const ws = wb.addWorksheet('Lançamentos');
+  ws.columns = [
+    { header: 'Data', key: 'date', width: 12 },
+    { header: 'Descrição', key: 'description', width: 40 },
+    { header: 'Categoria', key: 'category', width: 18 },
+    { header: 'Conta', key: 'account', width: 20 },
+    { header: 'Tipo', key: 'type', width: 10 },
+    { header: 'Valor (R$)', key: 'amount', width: 14 },
+  ];
+  ws.getRow(1).font = { bold: true };
+  for (const t of txs.items || []) {
+    ws.addRow({
+      date: new Date(t.date).toLocaleDateString('pt-BR'),
+      description: t.description,
+      category: t.category,
+      account: t.accountId?.name || '—',
+      type: t.type === 'in' ? 'Entrada' : 'Saída',
+      amount: t.amount,
+    });
+  }
+  // Totais
+  const income = (txs.items || []).filter((t) => t.type === 'in').reduce((s, t) => s + t.amount, 0);
+  const expense = (txs.items || []).filter((t) => t.type === 'out').reduce((s, t) => s + t.amount, 0);
+  ws.addRow({});
+  ws.addRow({ description: 'Total entradas', amount: income });
+  ws.addRow({ description: 'Total saídas', amount: expense });
+  ws.addRow({ description: 'Saldo do período', amount: income - expense });
+
+  // Aba 2: Contas
+  const ws2 = wb.addWorksheet('Contas');
+  ws2.columns = [
+    { header: 'Conta', key: 'name', width: 25 },
+    { header: 'Banco', key: 'bank', width: 20 },
+    { header: 'Tipo', key: 'type', width: 16 },
+    { header: 'Saldo inicial', key: 'initial', width: 16 },
+    { header: 'Entradas', key: 'in', width: 14 },
+    { header: 'Saídas', key: 'out', width: 14 },
+    { header: 'Saldo atual', key: 'balance', width: 16 },
+  ];
+  ws2.getRow(1).font = { bold: true };
+  for (const a of accounts) {
+    const agg = a.period || { in: 0, out: 0 };
+    ws2.addRow({
+      name: a.name,
+      bank: a.bank || '—',
+      type: a.type,
+      initial: a.initialBalance,
+      in: agg.in || 0,
+      out: agg.out || 0,
+      balance: a.balance ?? a.initialBalance,
+    });
+  }
+
+  // Aba 3: Resumo por categoria
+  const byCat = {};
+  for (const t of txs.items || []) {
+    if (t.type !== 'out') continue;
+    byCat[t.category] = (byCat[t.category] || 0) + t.amount;
+  }
+  const ws3 = wb.addWorksheet('Por categoria');
+  ws3.columns = [
+    { header: 'Categoria', key: 'cat', width: 25 },
+    { header: 'Total saídas (R$)', key: 'total', width: 18 },
+  ];
+  ws3.getRow(1).font = { bold: true };
+  Object.entries(byCat)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([cat, total]) => ws3.addRow({ cat, total }));
+
+  const buffer = await wb.xlsx.writeBuffer();
+  return { buffer, filename: `financeiro-${period.from.toISOString().slice(0, 10)}-${period.to.toISOString().slice(0, 10)}.xlsx` };
+}
+
 async function importStatement(userId, { accountId, filename = '', content = '' }) {
   const workspaceId = await getWorkspaceId(userId);
   const account = await repo.getAccount(workspaceId, accountId);
@@ -192,4 +283,5 @@ module.exports = {
   importStatement,
   categories,
   resolvePeriod,
+  exportXlsx,
 };

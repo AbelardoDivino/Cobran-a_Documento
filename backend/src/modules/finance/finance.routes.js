@@ -7,6 +7,7 @@ const router = Router();
 router.use(auth);
 router.get('/overview', controller.overview);
 router.get('/categories', controller.categories);
+router.get('/export', controller.exportXlsx);
 router.get('/accounts', controller.listAccounts);
 router.post('/accounts', controller.createAccount);
 router.patch('/accounts/:id', controller.updateAccount);
