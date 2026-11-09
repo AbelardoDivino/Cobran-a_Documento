@@ -146,10 +146,7 @@ export default function FinancesTransactions() {
               Até
               <input type="date" value={filters.to} onChange={setFilter('to')} />
             </label>
-            <label className="field" style={{ flex: 2 }}>
-              Buscar
-              <input value={filters.q} onChange={setFilter('q')} placeholder="descrição…" />
-            </label>
+
           </div>
         </div>
 

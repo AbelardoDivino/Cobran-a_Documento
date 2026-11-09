@@ -51,6 +51,7 @@ export function useCreateTransaction() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['finance-transactions'] });
       qc.invalidateQueries({ queryKey: ['finance-overview'] });
+      qc.invalidateQueries({ queryKey: ['finance-accounts'] });
     },
   });
 }
