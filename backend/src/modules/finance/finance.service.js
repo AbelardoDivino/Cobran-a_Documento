@@ -53,7 +53,16 @@ async function createAccount(userId, data) {
     err.status = 400;
     throw err;
   }
-  const initialBalance = Number(String(data.initialBalance ?? 0).replace(',', '.')) || 0;
+  const raw = String(data.initialBalance ?? 0).trim();
+  let normalized;
+  if (raw.includes(',')) {
+    normalized = raw.replace(/\./g, '').replace(',', '.');
+  } else if ((raw.match(/\./g) || []).length > 1) {
+    normalized = raw.replace(/\./g, '');
+  } else {
+    normalized = raw;
+  }
+  const initialBalance = Number(normalized) || 0;
   if (Number.isNaN(initialBalance)) {
     const err = new Error('Saldo inicial inválido');
     err.status = 400;

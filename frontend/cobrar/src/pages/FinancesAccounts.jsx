@@ -29,10 +29,18 @@ export default function FinancesAccounts() {
     setError('');
     try {
       const raw = String(form.initialBalance || '').trim();
-      // Aceita "1000", "1000.50", "1.000,50" e "1000,50".
-      const normalized = raw.includes(',')
-        ? raw.replace(/\./g, '').replace(',', '.')
-        : raw.replace(/,/g, '');
+      // Aceita "1000", "1000.50", "1.000,50", "1000,50" e "4.545.454.545" (BR).
+      let normalized;
+      if (raw.includes(',')) {
+        // Vírgula = decimal: remove pontos de milhar, troca vírgula por ponto.
+        normalized = raw.replace(/\./g, '').replace(',', '.');
+      } else if ((raw.match(/\./g) || []).length > 1) {
+        // Múltiplos pontos sem vírgula = milhar: remove todos os pontos.
+        normalized = raw.replace(/\./g, '');
+      } else {
+        // Um ponto ou nenhum: mantém (decimal ou inteiro).
+        normalized = raw;
+      }
       const parsed = Number(normalized);
       await createAccount.mutateAsync({
         ...form,
@@ -123,7 +131,14 @@ export default function FinancesAccounts() {
                     <button
                       className="btn ghost danger"
                       title="Arquivar conta"
-                      onClick={() => archive.mutate(a._id)}
+                      onClick={async () => {
+                        if (!window.confirm('Arquivar esta conta?')) return;
+                        try {
+                          await archive.mutateAsync(a._id);
+                        } catch (err) {
+                          setError(err?.response?.data?.error || 'Não foi possível arquivar.');
+                        }
+                      }}
                     >
                       <Archive size={15} />
                     </button>
