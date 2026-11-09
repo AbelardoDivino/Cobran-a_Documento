@@ -105,7 +105,7 @@ export default function FinancesAccounts() {
                 <th>Conta</th>
                 <th>Banco</th>
                 <th>Tipo</th>
-                <th style={{ textAlign: 'right' }}>Saldo inicial</th>
+                <th style={{ textAlign: 'right' }}>Saldo atual</th>
                 <th />
               </tr>
             </thead>
@@ -118,7 +118,7 @@ export default function FinancesAccounts() {
                   </td>
                   <td className="muted">{a.bank || '—'}</td>
                   <td className="muted">{TYPES.find((t) => t.id === a.type)?.label || a.type}</td>
-                  <td style={{ textAlign: 'right' }}>{brl(a.initialBalance)}</td>
+                  <td style={{ textAlign: 'right' }}>{brl(a.balance ?? a.initialBalance)}</td>
                   <td style={{ textAlign: 'right' }}>
                     <button
                       className="btn ghost danger"

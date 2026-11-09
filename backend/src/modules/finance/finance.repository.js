@@ -4,7 +4,26 @@ const Transaction = require('../../models/Transaction');
 async function listAccounts(workspaceId, { includeArchived = false } = {}) {
   const filter = { workspaceId };
   if (!includeArchived) filter.archived = false;
-  return Account.find(filter).sort({ createdAt: 1 });
+  const accounts = await Account.find(filter).sort({ createdAt: 1 });
+  // Calcula saldo atual = saldo inicial + entradas - saídas
+  const balances = await Transaction.aggregate([
+    { $match: { workspaceId } },
+    {
+      $group: {
+        _id: '$accountId',
+        in: { $sum: { $cond: [{ $eq: ['$type', 'in'] }, '$amount', 0] } },
+        out: { $sum: { $cond: [{ $eq: ['$type', 'out'] }, '$amount', 0] } },
+      },
+    },
+  ]);
+  const balanceMap = new Map(balances.map((b) => [String(b._id), b]));
+  return accounts.map((a) => {
+    const agg = balanceMap.get(String(a._id)) || { in: 0, out: 0 };
+    return {
+      ...a.toObject(),
+      balance: a.initialBalance + agg.in - agg.out,
+    };
+  });
 }
 
 async function getAccount(workspaceId, accountId) {
