@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Users, UserPlus, Trash2, Sparkles, ArrowRight } from 'lucide-react';
+import { Users, UserPlus, Trash2 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-import { Link } from 'react-router-dom';
 import { useWorkspace, useInviteMember, useRemoveMember } from '../hooks/useWorkspace';
 
 export default function Team() {
