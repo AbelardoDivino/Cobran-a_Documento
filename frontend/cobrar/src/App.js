@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import useAuth from './hooks/useAuth';
+import RequirePaid from './components/RequirePaid';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -40,22 +41,22 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/privacidade" element={<Privacy />} />
             <Route path="/termos" element={<Terms />} />
-            <Route path="/dashboard" element={<Private><Dashboard /></Private>} />
-            <Route path="/clients/:id" element={<Private><ClientDetail /></Private>} />
+            <Route path="/dashboard" element={<Private><RequirePaid><Dashboard /></RequirePaid></Private>} />
+            <Route path="/clients/:id" element={<Private><RequirePaid><ClientDetail /></RequirePaid></Private>} />
             <Route
               path="/clients/:id/requests/new"
-              element={<Private><NewRequest /></Private>}
+              element={<Private><RequirePaid><NewRequest /></RequirePaid></Private>}
             />
             <Route path="/u/:token" element={<PublicUpload />} />
             <Route path="/billing" element={<Private><Billing /></Private>} />
-            <Route path="/financas" element={<Private><Finances /></Private>} />
-            <Route path="/financas/contas" element={<Private><FinancesAccounts /></Private>} />
+            <Route path="/financas" element={<Private><RequirePaid><Finances /></RequirePaid></Private>} />
+            <Route path="/financas/contas" element={<Private><RequirePaid><FinancesAccounts /></RequirePaid></Private>} />
             <Route
               path="/financas/lancamentos"
-              element={<Private><FinancesTransactions /></Private>}
+              element={<Private><RequirePaid><FinancesTransactions /></RequirePaid></Private>}
             />
-            <Route path="/financas/importar" element={<Private><FinancesImport /></Private>} />
-            <Route path="/equipe" element={<Private><Team /></Private>} />
+            <Route path="/financas/importar" element={<Private><RequirePaid><FinancesImport /></RequirePaid></Private>} />
+            <Route path="/equipe" element={<Private><RequirePaid><Team /></RequirePaid></Private>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
