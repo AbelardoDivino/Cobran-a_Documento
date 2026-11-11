@@ -66,33 +66,6 @@ export default function Team() {
           </div>
         </div>
 
-        <div className="card">
-          <h3 style={{ marginTop: 0 }}>
-            <Sparkles size={17} /> Planos
-          </h3>
-          <div className="plans">
-            <div className={`plan${tier === 'begin' ? ' sel' : ''}`}>
-              <span className="pname">Begin</span>
-              <div className="pprice">1 pessoa</div>
-              <span className="pper">bancos ilimitados · R$ 40/mês</span>
-            </div>
-            <div className={`plan${tier === 'pro' ? ' sel' : ''}`}>
-              <span className="pname">Pro</span>
-              <div className="pprice">10 pessoas</div>
-              <span className="pper">bancos ilimitados · R$ 90/mês</span>
-            </div>
-          </div>
-          <p className="muted" style={{ marginBottom: isOwner && tier !== 'pro' ? 12 : 0 }}>
-            O Pro é liberado automaticamente após a confirmação do pagamento.
-            {!isOwner && ' Somente o dono do espaço pode assinar.'}
-          </p>
-          {isOwner && tier !== 'pro' && (
-            <Link className="btn primary" to="/billing">
-              Assinar o Pro <ArrowRight size={16} />
-            </Link>
-          )}
-        </div>
-
         {isOwner && (
           <form className="card" onSubmit={submit}>
             <h3 style={{ marginTop: 0 }}>

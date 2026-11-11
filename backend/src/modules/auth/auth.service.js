@@ -173,7 +173,7 @@ async function refresh({ refreshToken }) {
   return { accessToken: signAccess(user) };
 }
 
-async function loginWithGoogle({ idToken, accountType, officeName, companyCnpj }) {
+async function loginWithGoogle({ idToken, accountType, name, password, officeName, companyCnpj }) {
   const clientId = process.env.GOOGLE_CLIENT_ID || env.GOOGLE_CLIENT_ID;
   if (!clientId) {
     const err = new Error('Login com Google não configurado');
@@ -216,9 +216,11 @@ async function loginWithGoogle({ idToken, accountType, officeName, companyCnpj }
       throw err;
     }
     const isBusiness = accountType === 'business';
-    const passwordHash = await bcrypt.hash(cryptoRandom(), 1);
+    const passwordHash = password
+      ? await bcrypt.hash(password, 1)
+      : await bcrypt.hash(cryptoRandom(), 1);
     user = await User.create({
-      name: payload.name || payload.email.split('@')[0],
+      name: name || payload.name || payload.email.split('@')[0],
       email: payload.email,
       passwordHash,
       officeName: isBusiness ? officeName || '' : '',
@@ -227,9 +229,17 @@ async function loginWithGoogle({ idToken, accountType, officeName, companyCnpj }
       emailVerified: true,
       emailVerifiedAt: new Date(),
     });
-  } else if (!user.emailVerified) {
-    user.emailVerified = true;
-    user.emailVerifiedAt = new Date();
+  } else {
+    if (password) {
+      user.passwordHash = await bcrypt.hash(password, 1);
+    }
+    if (name) {
+      user.name = name;
+    }
+    if (!user.emailVerified) {
+      user.emailVerified = true;
+      user.emailVerifiedAt = new Date();
+    }
     await user.save();
   }
   await workspaceService.ensureUserContext(user);

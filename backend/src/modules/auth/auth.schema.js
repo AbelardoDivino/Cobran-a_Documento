@@ -6,6 +6,8 @@ const registerSchema = z.object({
   password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres'),
   officeName: z.string().optional().default(''),
   accountType: z.enum(['personal', 'business']).optional().default('personal'),
+  name: z.string().min(2).optional(),
+  password: z.string().min(8).optional(),
   companyCnpj: z.string().optional().default(''),
 });
 
@@ -21,6 +23,8 @@ const refreshSchema = z.object({
 const googleSchema = z.object({
   idToken: z.string().min(1),
   accountType: z.enum(['personal', 'business']).optional(),
+  name: z.string().min(2).optional(),
+  password: z.string().min(8).optional(),
   officeName: z.string().optional().default(''),
   companyCnpj: z.string().optional().default(''),
 });

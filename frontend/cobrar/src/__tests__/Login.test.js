@@ -24,7 +24,7 @@ function setup() {
   );
 }
 
-test('Etapa 1 — login válido chama a API e erro inválido aparece sem redirecionar', async () => {
+test('Etapa 1 - login valido chama a API e erro invalido aparece sem redirecionar', async () => {
   mockLogin.mockResolvedValueOnce({ accessToken: 'abc' });
   setup();
   fireEvent.change(screen.getByTestId('email'), { target: { value: 'c@c.com' } });
@@ -49,6 +49,8 @@ test('Google novo pede tipo de conta e envia os dados empresariais', async () =>
   expect(mockLoginWithGoogle).toHaveBeenCalledWith('fake-token');
 
   fireEvent.click(screen.getByText('Empresa'));
+  fireEvent.change(screen.getByTestId('google-name'), { target: { value: 'Max Silva' } });
+  fireEvent.change(screen.getByTestId('google-password'), { target: { value: 'senha1234' } });
   fireEvent.change(screen.getByTestId('google-office'), { target: { value: 'Escritorio Silva' } });
   fireEvent.change(screen.getByTestId('google-cnpj'), { target: { value: '12345678000190' } });
   fireEvent.click(screen.getByTestId('google-type-continue'));
@@ -56,6 +58,8 @@ test('Google novo pede tipo de conta e envia os dados empresariais', async () =>
   await waitFor(() =>
     expect(mockLoginWithGoogle).toHaveBeenLastCalledWith('fake-token', {
       accountType: 'business',
+      name: 'Max Silva',
+      password: 'senha1234',
       officeName: 'Escritorio Silva',
       companyCnpj: '12345678000190',
     })
@@ -70,6 +74,8 @@ test('Google empresarial sem nome da empresa mostra erro', async () => {
   fireEvent.click(screen.getByTestId('google'));
   await waitFor(() => expect(screen.getByTestId('google-type')).toBeInTheDocument());
   fireEvent.click(screen.getByText('Empresa'));
+  fireEvent.change(screen.getByTestId('google-name'), { target: { value: 'Max Silva' } });
+  fireEvent.change(screen.getByTestId('google-password'), { target: { value: 'senha1234' } });
   fireEvent.click(screen.getByTestId('google-type-continue'));
   await waitFor(() => expect(screen.getByTestId('google-type-error')).toHaveTextContent('nome da empresa'));
 });

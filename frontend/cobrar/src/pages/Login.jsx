@@ -22,6 +22,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [pendingGoogle, setPendingGoogle] = useState(null);
   const [tipo, setTipo] = useState('personal');
+  const [googleName, setGoogleName] = useState('');
+  const [googlePassword, setGooglePassword] = useState('');
+  const [showGooglePassword, setShowGooglePassword] = useState(false);
   const [officeName, setOfficeName] = useState('');
   const [companyCnpj, setCompanyCnpj] = useState('');
   const [googleError, setGoogleError] = useState('');
@@ -61,6 +64,14 @@ export default function Login() {
   const finishGoogle = async (event) => {
     event.preventDefault();
     setGoogleError('');
+    if (googleName.trim().length < 2) {
+      setGoogleError('Informe seu nome');
+      return;
+    }
+    if (googlePassword.length < 8) {
+      setGoogleError('A senha deve ter no mínimo 8 caracteres');
+      return;
+    }
     if (tipo === 'business' && officeName.trim().length < 2) {
       setGoogleError('Informe o nome da empresa');
       return;
@@ -69,6 +80,8 @@ export default function Login() {
     try {
       await loginWithGoogle(pendingGoogle, {
         accountType: tipo,
+        name: googleName.trim(),
+        password: googlePassword,
         officeName: tipo === 'business' ? officeName.trim() : '',
         companyCnpj: tipo === 'business' ? companyCnpj.trim() : '',
       });
@@ -125,6 +138,19 @@ export default function Login() {
       {pendingGoogle && (
         <form className="google-type" onSubmit={finishGoogle} data-testid="google-type">
           <h3>Primeiro acesso com Google</h3>
+          <label className="field">
+            Nome
+            <input value={googleName} onChange={(e) => setGoogleName(e.target.value)} placeholder="Seu nome" data-testid="google-name" />
+          </label>
+          <label className="field">
+            Senha
+            <div style={{ position: 'relative' }}>
+              <input type={showGooglePassword ? 'text' : 'password'} value={googlePassword} onChange={(e) => setGooglePassword(e.target.value)} placeholder="Mínimo 8 caracteres" data-testid="google-password" style={{ paddingRight: 40 }} />
+              <button type="button" onClick={() => setShowGooglePassword(!showGooglePassword)} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}>
+                {showGooglePassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+          </label>
           <p className="muted">Como você vai usar o Portal do Contador?</p>
           <div className="seg" role="group" aria-label="Tipo de conta">
             <button
