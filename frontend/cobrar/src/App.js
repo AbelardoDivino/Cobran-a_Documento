@@ -18,6 +18,7 @@ import FinancesAccounts from './pages/FinancesAccounts';
 import FinancesTransactions from './pages/FinancesTransactions';
 import FinancesImport from './pages/FinancesImport';
 import Team from './pages/Team';
+import TaxCalculator from './pages/TaxCalculator';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 
@@ -57,6 +58,7 @@ function App() {
             />
             <Route path="/financas/importar" element={<Private><RequirePaid><FinancesImport /></RequirePaid></Private>} />
             <Route path="/equipe" element={<Private><RequirePaid><Team /></RequirePaid></Private>} />
+            <Route path="/impostos" element={<Private><RequirePaid><TaxCalculator /></RequirePaid></Private>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>

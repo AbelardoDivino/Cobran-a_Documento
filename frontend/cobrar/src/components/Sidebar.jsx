@@ -9,6 +9,7 @@ import {
   ListOrdered,
   Upload,
   Users,
+  Calculator,
 } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 
@@ -21,6 +22,7 @@ const LINKS = [
   { to: '/financas/contas', label: 'Contas e bancos', Icon: Landmark, group: 'Financeiro', short: 'Contas' },
   { to: '/financas/lancamentos', label: 'Lançamentos', Icon: ListOrdered, group: 'Financeiro', short: 'Lançar' },
   { to: '/financas/importar', label: 'Importar extrato', Icon: Upload, group: 'Financeiro', short: 'Extrato' },
+  { to: '/impostos', label: 'Calculadora de impostos', Icon: Calculator, group: 'Fiscal', short: 'Impostos' },
   { to: '/equipe', label: 'Equipe', Icon: Users, group: 'Financeiro', short: 'Equipe' },
   { to: '/dashboard', label: 'Clientes', Icon: LayoutDashboard, group: 'Documentos', short: 'Clientes' },
   { to: '/billing', label: 'Plano e assinatura', Icon: CreditCard, group: 'Conta', short: 'Plano' },
@@ -112,4 +114,3 @@ export default function Sidebar() {
     </>
   );
 }
-
