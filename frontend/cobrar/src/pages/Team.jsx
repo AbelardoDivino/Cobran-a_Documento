@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Users, UserPlus, Trash2 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-import { useWorkspace, useInviteMember, useRemoveMember } from '../hooks/useWorkspace';
+import { useWorkspace, useInviteMember, useRemoveMember, useSetTier } from '../hooks/useWorkspace';
+import useAuth from '../hooks/useAuth';
 
 export default function Team() {
   const { data, isLoading } = useWorkspace();
+  const { user } = useAuth();
+  const setTier = useSetTier();
   const invite = useInviteMember();
   const remove = useRemoveMember();
   const [form, setForm] = useState({ email: '', name: '' });
@@ -97,6 +100,21 @@ export default function Team() {
           </form>
         )}
 
+        {user?.email === 'admin@teste.com' && (
+          <div className="card">
+            <h3 style={{ marginTop: 0 }}>Plano de teste (admin)</h3>
+            <p className="muted">Troque entre Begin e Pro para testar.</p>
+            <div className="row">
+              <button className="btn" disabled={setTier.isPending || tier === 'begin'} onClick={() => setTier.mutate('begin')}>
+                Begin
+              </button>
+              <button className="btn primary" disabled={setTier.isPending || tier === 'pro'} onClick={() => setTier.mutate('pro')}>
+                Pro
+              </button>
+            </div>
+            {setTier.isError && <p className="error">{setTier.error?.response?.data?.error || 'Erro ao trocar plano'}</p>}
+          </div>
+        )}
         <div className="card">
           <h3 style={{ marginTop: 0 }}>Membros</h3>
           {isLoading && <p className="muted">Carregando…</p>}

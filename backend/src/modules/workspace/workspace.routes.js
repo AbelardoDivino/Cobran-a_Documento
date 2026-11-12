@@ -10,6 +10,12 @@ router.post('/invite', controller.invite);
 router.delete('/members/:membershipId', controller.removeMember);
 
 // O Pro só é liberado pelo fluxo de pagamento (/api/billing). PATCH /tier desativado.
-router.patch('/tier', (req, res) => res.status(403).json({ error: 'Assine o Pro em /billing para liberar o plano' }));
+// Admin pode trocar de plano para testar. Usuarios comuns assinam em /billing.
+router.patch('/tier', (req, res, next) => {
+  if (req.user?.email !== 'admin@teste.com') {
+    return res.status(403).json({ error: 'Assine o Pro em /billing para liberar o plano' });
+  }
+  return controller.setTier(req, res, next);
+});
 
 module.exports = router;
