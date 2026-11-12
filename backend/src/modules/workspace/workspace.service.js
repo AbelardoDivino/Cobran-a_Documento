@@ -11,6 +11,9 @@ const LIMITS = {
 // Pro só vale com assinatura ativa dentro do período pago.
 async function enforceExpiry(workspace) {
   if (!workspace || workspace.tier !== 'pro') return workspace;
+  // Admin pode testar o plano Pro sem assinatura real.
+  const owner = await User.findById(workspace.ownerId).select('email').lean();
+  if (owner?.email === 'admin@teste.com') return workspace;
   const sub = await Subscription.findOne({
     contadorId: workspace.ownerId,
     status: 'active',
