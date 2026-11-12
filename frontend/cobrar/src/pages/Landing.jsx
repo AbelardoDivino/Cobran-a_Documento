@@ -81,6 +81,11 @@ export default function Landing() {
             <a href="#planos">Planos</a>
           </nav>
           <div className="lp-nav-actions">
+            {logged && (
+              <Link className="btn ghost" to="/login">
+                Entrar
+              </Link>
+            )}
             {logged ? (
               <Link className="btn primary" to="/financas">
                 Abrir painel <ArrowRight size={16} />
