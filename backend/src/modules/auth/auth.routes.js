@@ -3,7 +3,7 @@ const controller = require('./auth.controller');
 const validate = require('../../middlewares/validate');
 const { authLimiter, registerLimiter, refreshLimiter } = require('../../middlewares/rateLimiter');
 const auth = require('../../middlewares/authMiddleware');
-const { registerSchema, loginSchema, refreshSchema, googleSchema } = require('./auth.schema');
+const { registerSchema, loginSchema, refreshSchema, googleSchema, forgotPasswordSchema, resetPasswordSchema } = require('./auth.schema');
 
 const router = Router();
 
@@ -13,5 +13,9 @@ router.post('/refresh', refreshLimiter, validate(refreshSchema), controller.refr
 router.post('/google', authLimiter, validate(googleSchema), controller.google);
 router.get('/verify-email', controller.verifyEmail);
 router.post('/resend-verification', auth, refreshLimiter, controller.resendVerification);
+
+router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), controller.forgotPassword);
+router.get('/reset-password', controller.resetPasswordPage);
+router.post('/reset-password', authLimiter, validate(resetPasswordSchema), controller.resetPassword);
 
 module.exports = router;

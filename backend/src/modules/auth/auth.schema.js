@@ -29,4 +29,13 @@ const googleSchema = z.object({
   companyCnpj: z.string().optional().default(''),
 });
 
-module.exports = { registerSchema, loginSchema, refreshSchema, googleSchema };
+const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres'),
+});
+
+module.exports = { registerSchema, loginSchema, refreshSchema, googleSchema, forgotPasswordSchema, resetPasswordSchema };

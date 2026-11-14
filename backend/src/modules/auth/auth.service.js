@@ -255,6 +255,52 @@ function cryptoRandom() {
   return require('crypto').randomBytes(32).toString('hex');
 }
 
+function signPasswordReset(user) {
+  return jwt.sign({ type: 'reset-password' }, env.JWT_SECRET, {
+    subject: String(user._id),
+    expiresIn: '1h',
+  });
+}
+
+async function requestPasswordReset(email) {
+  const user = await User.findOne({ email });
+  if (!user) return { sent: true };
+  const token = signPasswordReset(user);
+  const backendUrl = String(env.BACKEND_URL || env.FRONTEND_URL).replace(/\/+$/, '');
+  const link = backendUrl + '/api/auth/reset-password?token=' + token;
+  await sendMail({
+    to: user.email,
+    subject: 'Redefinir senha - Portal do Contador',
+    text: 'Ola ' + user.name + ', redefina sua senha em ' + link + ' (expira em 1 hora).',
+    html: '<p>Ola ' + user.name + ',</p><p><a href="' + link + '">Redefinir senha</a></p><p>O link expira em 1 hora.</p>',
+  });
+  return { sent: true };
+}
+
+async function resetPassword(token, password) {
+  let payload;
+  try {
+    payload = jwt.verify(token, env.JWT_SECRET);
+  } catch (e) {
+    const err = new Error('Link invalido ou expirado');
+    err.status = 400;
+    throw err;
+  }
+  if (payload.type !== 'reset-password') {
+    const err = new Error('Link invalido');
+    err.status = 400;
+    throw err;
+  }
+  const user = await User.findById(payload.sub);
+  if (!user) {
+    const err = new Error('Usuario nao encontrado');
+    err.status = 400;
+    throw err;
+  }
+  user.passwordHash = await bcrypt.hash(password, 1);
+  await user.save();
+  return { reset: true };
+}
 module.exports = {
   register,
   login,
@@ -264,4 +310,6 @@ module.exports = {
   resendVerification,
   sendVerificationEmail,
   publicUser,
+  requestPasswordReset,
+  resetPassword,
 };

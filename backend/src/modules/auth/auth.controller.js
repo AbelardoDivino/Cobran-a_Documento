@@ -55,4 +55,26 @@ async function resendVerification(req, res, next) {
   }
 }
 
-module.exports = { register, login, refresh, google, verifyEmail, resendVerification };
+async function forgotPassword(req, res, next) {
+  try {
+    await authService.requestPasswordReset(req.body.email);
+    return res.json({ sent: true });
+  } catch (e) {
+    return next(e);
+  }
+}
+
+async function resetPasswordPage(req, res) {
+  // Redireciona para o frontend com o token.
+  return res.redirect(`${env.FRONTEND_URL}/reset-password?token=${encodeURIComponent(req.query.token || '')}`);
+}
+
+async function resetPassword(req, res, next) {
+  try {
+    await authService.resetPassword(req.body.token, req.body.password);
+    return res.json({ reset: true });
+  } catch (e) {
+    return next(e);
+  }
+}
+module.exports = { register, login, refresh, google, verifyEmail, resendVerification, forgotPassword, resetPasswordPage, resetPassword };

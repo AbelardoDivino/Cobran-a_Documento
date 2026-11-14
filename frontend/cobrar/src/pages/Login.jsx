@@ -19,6 +19,10 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const verified = searchParams.get('verified');
   const [error, setError] = useState('');
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotMsg, setForgotMsg] = useState('');
+  const [forgotBusy, setForgotBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [pendingGoogle, setPendingGoogle] = useState(null);
   const [tipo, setTipo] = useState('personal');
@@ -42,6 +46,20 @@ export default function Login() {
       } else {
         setError('Credenciais invÃ¡lidas. Verifique e tente de novo.');
       }
+    }
+  };
+
+  const onForgot = async (e) => {
+    e.preventDefault();
+    setForgotMsg('');
+    setForgotBusy(true);
+    try {
+      await (await import('../services/api')).default.post('/api/auth/forgot-password', { email: forgotEmail });
+      setForgotMsg('Se o e-mail existir, enviamos um link de redefinição.');
+    } catch (err) {
+      setForgotMsg('Não foi possível enviar. Tente de novo.');
+    } finally {
+      setForgotBusy(false);
     }
   };
 
@@ -121,6 +139,23 @@ export default function Login() {
             </button>
           </div>
         </label>
+      <p style={{ textAlign: 'right', marginTop: -6, marginBottom: 8 }}>
+        <button type="button" className="link-btn" onClick={() => setShowForgot((v) => !v)}>
+          Esqueci minha senha
+        </button>
+      </p>
+      {showForgot && (
+        <form onSubmit={onForgot} style={{ marginBottom: 12 }}>
+          <label className="field">
+            E-mail
+            <input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} placeholder="voce@exemplo.com" />
+          </label>
+          {forgotMsg && <p className="muted">{forgotMsg}</p>}
+          <button className="btn" type="submit" disabled={forgotBusy}>
+            {forgotBusy ? 'Enviando...' : 'Enviar link'}
+          </button>
+        </form>
+      )}
         {error && <p className="error" data-testid="login-error">{error}</p>}
         <button className="btn primary" type="submit" data-testid="submit">
           Entrar
