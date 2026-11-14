@@ -29,15 +29,27 @@ export default function FinancesImport() {
       return;
     }
     if (!file) {
-      setError('Escolha o arquivo do extrato (CSV ou OFX).');
+      setError('Escolha o arquivo do extrato (CSV, OFX ou PDF).');
       return;
     }
-    const content = await file.text();
+    let content;
+    let isPdf = false;
+    if (file.name.toLowerCase().endsWith('.pdf')) {
+      isPdf = true;
+      const buf = await file.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      content = btoa(binary);
+    } else {
+      content = await file.text();
+    }
     try {
       const data = await importStatement.mutateAsync({
         accountId: target,
         filename: file.name,
         content,
+        isPdf,
       });
       setResult(data);
       setFile(null);
@@ -85,8 +97,8 @@ export default function FinancesImport() {
               </select>
             </label>
             <label className="field" style={{ flex: 2 }}>
-              Arquivo (.csv, .ofx, .txt)
-              <input type="file" accept=".csv,.ofx,.txt,text/csv,text/plain" onChange={onFile} />
+              Arquivo (.csv, .ofx, .txt, .pdf)
+              <input type="file" accept=".csv,.ofx,.txt,.pdf,text/csv,text/plain,application/pdf" onChange={onFile} />
             </label>
           </div>
 

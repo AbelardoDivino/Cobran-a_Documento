@@ -228,9 +228,25 @@ async function exportXlsx(userId, query) {
   return { buffer, filename: `financeiro-${period.from.toISOString().slice(0, 10)}-${period.to.toISOString().slice(0, 10)}.xlsx` };
 }
 
-async function importStatement(userId, { accountId, filename = '', content = '' }) {
+async function importStatement(userId, { accountId, filename = '', content = '', isPdf = false }) {
   const workspaceId = await getWorkspaceId(userId);
   const account = await repo.getAccount(workspaceId, accountId);
+
+  // PDF: content vem em base64; extrai texto com pdf-parse.
+  if (isPdf || String(filename).toLowerCase().endsWith('.pdf')) {
+    try {
+      const { PDFParse } = require('pdf-parse');
+      const buf = Buffer.from(String(content), 'base64');
+      const pdf = new PDFParse({ data: buf });
+      const data = await pdf.getText();
+      content = data.text || '';
+      await pdf.destroy();
+    } catch (e) {
+      const err = new Error('Nao foi possivel ler o PDF. Envie CSV ou OFX.');
+      err.status = 400;
+      throw err;
+    }
+  }
 
   if (Buffer.byteLength(String(content), 'utf8') > MAX_CONTENT_BYTES) {
     const err = new Error('Arquivo muito grande (máx. 3 MB)');

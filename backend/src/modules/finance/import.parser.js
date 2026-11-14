@@ -59,16 +59,16 @@ const DESC_KEYS = [
   'descricao',
   'description',
   'historico',
-  'histórico',
+  'historico',
   'memo',
   'lancamento',
-  'lançamento',
+  'lancamento',
   'detalhe',
   'estabelecimento',
 ];
 const AMOUNT_KEYS = ['valor', 'amount', 'value', 'montante', 'quantia'];
-const DEBIT_KEYS = ['debito', 'débito', 'saida', 'saída'];
-const CREDIT_KEYS = ['credito', 'crédito', 'entrada'];
+const DEBIT_KEYS = ['debito', 'debito', 'saida', 'saida'];
+const CREDIT_KEYS = ['credito', 'credito', 'entrada'];
 
 function findIndex(headers, keys) {
   for (let i = 0; i < headers.length; i += 1) {
@@ -149,7 +149,7 @@ function parseCsv(text) {
     }
     if (Number.isNaN(amount) || amount === 0) continue;
 
-    const description = (cells[descIdx] || 'Lançamento importado').slice(0, 200);
+    const description = (cells[descIdx] || 'Lancamento importado').slice(0, 200);
     rows.push({ date, description, amount });
   }
   return finalize(rows, 'csv');
@@ -169,7 +169,7 @@ function parseOfx(text) {
       ? parseDate(`${rawDate.slice(0, 4)}-${rawDate.slice(4, 6)}-${rawDate.slice(6, 8)}`)
       : null;
     const amount = parseAmount(pick('TRNAMT'));
-    const description = (pick('MEMO') || pick('NAME') || 'Lançamento importado').slice(0, 200);
+    const description = (pick('MEMO') || pick('NAME') || 'Lancamento importado').slice(0, 200);
     const fitid = pick('FITID');
     if (!date || Number.isNaN(amount) || amount === 0) continue;
     rows.push({ date, description, amount, fitid });
@@ -197,7 +197,32 @@ function finalize(rows, source) {
 function detectFormat(filename, content) {
   const name = normalize(filename);
   if (name.endsWith('.ofx') || /<OFX>|<STMTTRN>/i.test(content)) return 'ofx';
+  if (name.endsWith('.pdf')) return 'pdf';
   return 'csv';
+}
+
+// Extrai transacoes de texto de PDF de extrato bancario (heuristica).
+function parsePdfText(text) {
+  const lines = String(text || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const rows = [];
+  // Padrao: data (dd/mm ou dd/mm/yyyy) ... valor (numero com virgula)
+  const dateRe = /(\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?)/;
+  const amountRe = /(-?\s*R?\$?\s*\d{1,3}(?:\.\d{3})*(?:,\d{2})|-?\d+(?:,\d{2}))/;
+  for (const line of lines) {
+    const dm = line.match(dateRe);
+    if (!dm) continue;
+    const date = parseDate(dm[1]);
+    if (!date) continue;
+    const am = line.match(amountRe);
+    if (!am) continue;
+    const amount = parseAmount(am[1]);
+    if (Number.isNaN(amount) || amount === 0) continue;
+    // descricao = resto da linha sem data e valor
+    let desc = line.replace(dm[1], '').replace(am[1], '').trim();
+    desc = desc.replace(/\s{2,}/g, ' ').slice(0, 200) || 'Lancamento importado';
+    rows.push({ date, description: desc, amount });
+  }
+  return finalize(rows, 'pdf');
 }
 
 function parseStatement({ filename = '', content = '' }) {
@@ -207,10 +232,15 @@ function parseStatement({ filename = '', content = '' }) {
     throw err;
   }
   const format = detectFormat(filename, content);
-  const rows = format === 'ofx' ? parseOfx(content) : parseCsv(content);
+  let rows;
+  if (format === 'pdf') {
+    rows = parsePdfText(content);
+  } else {
+    rows = format === 'ofx' ? parseOfx(content) : parseCsv(content);
+  }
   if (!rows.length) {
     const err = new Error(
-      'Nenhum lançamento encontrado. Use CSV com colunas data, descrição e valor (ou um OFX do banco).'
+      'Nenhum lancamento encontrado. Use CSV com colunas data, descricao e valor, OFX do banco, ou PDF do extrato.'
     );
     err.status = 400;
     throw err;
@@ -218,4 +248,4 @@ function parseStatement({ filename = '', content = '' }) {
   return { format, rows };
 }
 
-module.exports = { parseStatement, parseCsv, parseOfx, parseAmount, parseDate, normalize };
+module.exports = { parseStatement, parseCsv, parseOfx, parseAmount, parseDate, normalize, parsePdfText };
