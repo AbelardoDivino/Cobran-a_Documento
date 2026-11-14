@@ -7,6 +7,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import AuthLayout from './AuthLayout';
 import GoogleSignInButton from '../components/GoogleSignInButton';
+import api from '../services/api';
 
 const schema = z.object({
   email: z.string().email('E-mail inválido'),
@@ -19,10 +20,6 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const verified = searchParams.get('verified');
   const [error, setError] = useState('');
-  const [showForgot, setShowForgot] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotMsg, setForgotMsg] = useState('');
-  const [forgotBusy, setForgotBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [pendingGoogle, setPendingGoogle] = useState(null);
   const [tipo, setTipo] = useState('personal');
@@ -33,6 +30,10 @@ export default function Login() {
   const [companyCnpj, setCompanyCnpj] = useState('');
   const [googleError, setGoogleError] = useState('');
   const [savingGoogle, setSavingGoogle] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotMsg, setForgotMsg] = useState('');
+  const [forgotBusy, setForgotBusy] = useState(false);
   const { register, handleSubmit, formState } = useForm({ resolver: zodResolver(schema) });
 
   const onSubmit = async (values) => {
@@ -54,10 +55,10 @@ export default function Login() {
     setForgotMsg('');
     setForgotBusy(true);
     try {
-      await (await import('../services/api')).default.post('/api/auth/forgot-password', { email: forgotEmail });
-      setForgotMsg('Se o e-mail existir, enviamos um link de redefini��o.');
+      await api.post('/api/auth/forgot-password', { email: forgotEmail });
+      setForgotMsg('Se o e-mail existir, enviamos um link de redefinição.');
     } catch (err) {
-      setForgotMsg('N�o foi poss�vel enviar. Tente de novo.');
+      setForgotMsg('Não foi possível enviar. Tente de novo.');
     } finally {
       setForgotBusy(false);
     }
@@ -120,47 +121,79 @@ export default function Login() {
       switchLink="/register"
       switchLabel="Criar conta"
     >
-      <form onSubmit={handleSubmit(onSubmit)}>
-        {verified === '1' && <p className="auth-ok">E-mail confirmado. Faça login para continuar.</p>}
-        {verified === '0' && (
-          <p className="error">Link inválido ou expirado. Entre e peça um novo link.</p>
-        )}
-        <label className="field">
-          E-mail
-          <input type="email" placeholder="voce@exemplo.com" {...register('email')} data-testid="email" />
-          {formState.errors.email && <span className="error">{formState.errors.email.message}</span>}
-        </label>
-        <label className="field">
-          Senha
-          <div style={{ position: 'relative' }}>
-            <input type={showPassword ? 'text' : 'password'} placeholder="Sua senha" {...register('password')} data-testid="password" style={{ paddingRight: 40 }} />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}>
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </button>
-          </div>
-        </label>
-      <p style={{ textAlign: 'right', marginTop: -6, marginBottom: 8 }}>
-        <button type="button" className="link-btn" onClick={() => setShowForgot((v) => !v)}>
-          Esqueci minha senha
-        </button>
-      </p>
-      {showForgot && (
-        <form onSubmit={onForgot} style={{ marginBottom: 12 }}>
+      {showForgot ? (
+        <form onSubmit={onForgot}>
+          {forgotMsg && <p className="muted">{forgotMsg}</p>}
           <label className="field">
             E-mail
-            <input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} placeholder="voce@exemplo.com" />
+            <input
+              type="email"
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+              placeholder="voce@exemplo.com"
+            />
           </label>
-          {forgotMsg && <p className="muted">{forgotMsg}</p>}
-          <button className="btn" type="submit" disabled={forgotBusy}>
-            {forgotBusy ? 'Enviando...' : 'Enviar link'}
+          <button className="btn primary" type="submit" disabled={forgotBusy} style={{ width: '100%' }}>
+            {forgotBusy ? 'Enviando...' : 'Enviar link de redefinição'}
+          </button>
+          <p style={{ textAlign: 'center', marginTop: 12 }}>
+            <button
+              type="button"
+              className="btn ghost"
+              style={{ padding: '4px 8px', fontSize: 13 }}
+              onClick={() => { setShowForgot(false); setForgotMsg(''); }}
+            >
+              Voltar ao login
+            </button>
+          </p>
+        </form>
+      ) : (
+        <form onSubmit={handleSubmit(onSubmit)}>
+          {verified === '1' && <p className="auth-ok">E-mail confirmado. Faça login para continuar.</p>}
+          {verified === '0' && (
+            <p className="error">Link inválido ou expirado. Entre e peça um novo link.</p>
+          )}
+          <label className="field">
+            E-mail
+            <input type="email" placeholder="voce@exemplo.com" {...register('email')} data-testid="email" />
+            {formState.errors.email && <span className="error">{formState.errors.email.message}</span>}
+          </label>
+          <label className="field">
+            Senha
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Sua senha"
+                {...register('password')}
+                data-testid="password"
+                style={{ paddingRight: 40 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+          </label>
+          <p style={{ textAlign: 'right', marginTop: -6, marginBottom: 8 }}>
+            <button
+              type="button"
+              className="btn ghost"
+              style={{ padding: '4px 8px', fontSize: 13 }}
+              onClick={() => setShowForgot(true)}
+            >
+              Esqueci minha senha
+            </button>
+          </p>
+          {error && <p className="error" data-testid="login-error">{error}</p>}
+          <button className="btn primary" type="submit" data-testid="submit" style={{ width: '100%' }}>
+            Entrar
           </button>
         </form>
       )}
-        {error && <p className="error" data-testid="login-error">{error}</p>}
-        <button className="btn primary" type="submit" data-testid="submit">
-          Entrar
-        </button>
-      </form>
+
       <div className="auth-divider">
         <span>ou</span>
       </div>
@@ -180,8 +213,19 @@ export default function Login() {
           <label className="field">
             Senha
             <div style={{ position: 'relative' }}>
-              <input type={showGooglePassword ? 'text' : 'password'} value={googlePassword} onChange={(e) => setGooglePassword(e.target.value)} placeholder="Mínimo 8 caracteres" data-testid="google-password" style={{ paddingRight: 40 }} />
-              <button type="button" onClick={() => setShowGooglePassword(!showGooglePassword)} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}>
+              <input
+                type={showGooglePassword ? 'text' : 'password'}
+                value={googlePassword}
+                onChange={(e) => setGooglePassword(e.target.value)}
+                placeholder="Mínimo 8 caracteres"
+                data-testid="google-password"
+                style={{ paddingRight: 40 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowGooglePassword(!showGooglePassword)}
+                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}
+              >
                 {showGooglePassword ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
@@ -235,8 +279,8 @@ export default function Login() {
               {savingGoogle ? 'Entrando...' : 'Continuar'}
             </button>
             <button
-              className="btn"
               type="button"
+              className="btn"
               onClick={() => {
                 setPendingGoogle(null);
                 setGoogleError('');

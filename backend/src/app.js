@@ -5,6 +5,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const env = require('./config/env');
 const errorHandler = require('./middlewares/errorHandler');
+const { apiLimiter } = require('./middlewares/rateLimiter');
 
 const authRoutes = require('./modules/auth/auth.routes');
 const clientsRoutes = require('./modules/clients/clients.routes');
@@ -27,6 +28,7 @@ function createApp() {
   app.use(cors({ origin: corsOrigins.length ? corsOrigins : false, credentials: true }));
   app.use(express.json({ limit: '5mb' }));
   app.use(cookieParser());
+  app.use('/api', apiLimiter);
 
   app.get('/health', (req, res) => res.json({ ok: true }));
 

@@ -10,6 +10,7 @@ async function createRequest(contadorId, clientId, { competencia, dueDate, items
     competencia,
     dueDate,
     publicToken,
+    expiresAt: new Date(new Date(dueDate).getTime() + 90 * 24 * 60 * 60 * 1000),
   });
   const labels = Array.isArray(items) && items.length ? items : [];
   const docs = await DocumentItem.insertMany(

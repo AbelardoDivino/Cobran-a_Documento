@@ -34,6 +34,14 @@ const billingLimiter = rateLimit({
   skip: skipTests,
 });
 
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: skipTests,
+});
+
 // Só o POST do upload público; o GET da página continua livre (polling).
 const publicUploadLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -48,5 +56,6 @@ module.exports = {
   registerLimiter,
   refreshLimiter,
   billingLimiter,
+  apiLimiter,
   publicUploadLimiter,
 };

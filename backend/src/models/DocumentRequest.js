@@ -7,6 +7,7 @@ const requestSchema = new mongoose.Schema(
     competencia: { type: String, required: true }, // ex: "2026-09"
     publicToken: { type: String, required: true, unique: true, index: true },
     dueDate: { type: Date, required: true },
+    expiresAt: { type: Date, default: null },
   },
   { timestamps: { createdAt: true, updatedAt: true } }
 );
